@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3.4
 
 from http.server import BaseHTTPRequestHandler,HTTPServer
 import urllib
@@ -8,8 +8,11 @@ import time
 import datetime
 from ast import literal_eval
 import json
+import sys
 ###custom libs
-from lib.etcd_client import EtcdManagement
+sys.path.append('/aux0/customer/containers/ocpytools/lib/')
+from etcd_client import EtcdManagement
+from logger import Logger
 PORT_NUMBER = 6667
 
 
@@ -25,7 +28,7 @@ class Http_server_simple(threading.Thread):
 		Constructor
 		Initializing a thread
 		"""
-		
+
 #        try:
 		threading.Thread.__init__(self)
 		self.buffer = []
@@ -82,10 +85,10 @@ class myHandler(BaseHTTPRequestHandler):
 		self.send_response(200)
 		self.send_header('Content-type','text/html')
 		self.end_headers()
-		print(self.path)
-		if "?" in self.path:
-			for key,value in dict(urllib.parse.parse_qsl(self.path.split("?")[1], True)).items():
-				# print(key + " = " + value)
+#		print(self.path)
+#		if "?" in self.path:
+#			for key,value in dict(urllib.parse.parse_qsl(self.path.split("?")[1], True)).items():
+#			print(key + " = " + value)
 #		self.wfile.write("Hello World !")
 		return
 
@@ -111,7 +114,7 @@ class myHandler(BaseHTTPRequestHandler):
 				if not parsed_host in clean_hosts:
 					clean_hosts.append(parsed_host)
 			value = list(set(clean_hosts))[0]
-			
+
 			etcd_kv['key1'] = parsed_dict['key1']
 			etcd_kv['value1'] = parsed_dict['value1']
 			etcd_kv['import_type'] = parsed_dict['import_type']
@@ -121,13 +124,14 @@ class myHandler(BaseHTTPRequestHandler):
 				etcd_kv['key2'] = parsed_dict['key2']
 				etcd_kv['value2'] = parsed_dict['value2']
 
+		
 		return etcd_kv
 
 
 	def generate_ids(self,web_hostnames, etcd_manager):
 		"""
 		Generates the id for the specific
-		hostname and writes it in the 
+		hostname and writes it in the
 		etcd
 		Args:
 			web_hostnames(dict)
@@ -148,35 +152,49 @@ class myHandler(BaseHTTPRequestHandler):
 
 	def do_POST(self):
 		"""
-		Parse the post request 
+		Parse the post request
 		and returns response to web
 		Args:
 			None
 		Returns:
 			None
 		"""
+		logger = Logger(filename = "kvs_wrapper", \
+						logger_name = "myHandler do_POST", \
+						dirname="/aux1/ockvsman/logs/")
+
 		etcdman = EtcdManagement()
 		web_params = self.handle_web()
+		logger.info("Handle params from web => {}".format(web_params))
 
 		generated_id = self.generate_ids(web_params, etcdman)[web_params['micro_app']]
+		logger.info("Generated id => {}".format(generated_id))
 		etcdman.write(new_key="/platform/{}/general/confs/{}". \
 					format(web_params['micro_app'], web_params['key1']), \
 						value = web_params['value1'])
+
+		logger.info("Write Key 1=> /platform/{}/general/confs/{}\tValue 2=> {}". \
+				format(web_params['micro_app'], web_params['key1'], web_params['value1']))
 
 		if web_params['import_type'] == 'connector':
 			etcdman.write(new_key="/platform/{}/general/confs/{}". \
 					format(web_params['micro_app'], web_params['key2']), \
 							value = web_params['value2'])
+			logger.info("Write Key 2=> /platform/{}/general/confs/{}\tValue 2=> {}". \
+					format(web_params['micro_app'], web_params['key2'], web_params['value2']))
+
 		etcdman.write(new_key="/platform/{}/general/ids/{}". \
 				format(web_params['micro_app'], web_params['key1']), value=generated_id)
-
+		logger.info("Write id => {} in ETCD => /platform/{}/general/ids/{}". \
+				format(generated_id, web_params['micro_app'], web_params['key1']))
 		time.sleep(1)
 
 		status_results = {}
 		hostnames = web_params['hostnames'].split(',')
 		for i in range(1,5):
 			for hostname in hostnames:
-				taken_status = etcdman.get_config_statuses(hostname)
+				taken_status = etcdman.get_config_statuses(hostname = hostname, \
+														conf_name = web_params['key1'])
 				if taken_status:
 					returned_status = json.loads(taken_status)
 					if int(returned_status['id']) == generated_id:
@@ -190,12 +208,13 @@ class myHandler(BaseHTTPRequestHandler):
 											"timestamp": datetime.datetime.now(), \
 											"status": "unknown"}
 
+		logger.clear_handler()
 		if web_params:
 			self.send_response(200)
 			self.send_header('Content-type','text/html')
 			self.end_headers()
+			# logger.info("Responds to the web the status => {}".format(status_results))
 			self.wfile.write((str(status_results).encode('utf-8')))
 		else:
+			# logger.error("Responds to the web 401")
 			self.send_response(401)
-
-

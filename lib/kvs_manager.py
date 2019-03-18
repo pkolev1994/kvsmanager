@@ -1,13 +1,14 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.4
 
 import os
 import re
 import socket
 import sys
 #custom libs
+sys.path.append('/aux0/customer/containers/ockvsman/')
 from lib.http_server_simple import Http_server_simple
-sys.path.append('/aux0/customer/containers/ocpytools/')
-from lib.etcd_client import EtcdManagement
+sys.path.append('/aux0/customer/containers/ocpytools/lib/')
+from etcd_client import EtcdManagement
 
 class kvsManager(Http_server_simple):
 
