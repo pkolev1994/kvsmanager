@@ -1,7 +1,7 @@
 Summary: Opencode KVS Manager
 Name: ockvsman
 Version: 1.0.1
-Release: 6%{?dist}%{?ocrel}
+Release: 7%{?dist}%{?ocrel}
 BuildArch: noarch
 URL: http://www.opencode.com
 License: Commercial
@@ -28,14 +28,14 @@ rm -rf $RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/bin/
-mkdir -p $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/etc/
 mkdir -p $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/lib/
-mkdir -p $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/run/
+mkdir -p $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/docs/
 mkdir -p $RPM_BUILD_ROOT/aux1/ockvsman/logs/
 mkdir -p $RPM_BUILD_ROOT/usr/local/bin/
 
 cp -f lib/* $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/lib/
 cp -f bin/* $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/bin/
+cp -f docs/* $RPM_BUILD_ROOT/aux0/customer/containers/ockvsman/docs/
 
 ln -sf /aux0/customer/containers/ockvsman/bin/ockvsman.py $RPM_BUILD_ROOT/usr/local/bin/ockvsman
 
@@ -43,9 +43,8 @@ ln -sf /aux0/customer/containers/ockvsman/bin/ockvsman.py $RPM_BUILD_ROOT/usr/lo
 %defattr(-,root,root)
 %dir /aux0/customer/containers/ockvsman/
 /aux0/customer/containers/ockvsman/bin
-/aux0/customer/containers/ockvsman/etc
 /aux0/customer/containers/ockvsman/lib
-/aux0/customer/containers/ockvsman/run
+/aux0/customer/containers/ockvsman/docs/
 /aux1/ockvsman/logs/
 /usr/local/bin/ockvsman
 

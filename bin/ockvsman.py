@@ -16,7 +16,7 @@ def main():
 	if option == "start":
 		print("Starting kvs_manager ...")
 		os.chdir("/aux0/customer/containers/ockvsman/bin/")
-		os.system("/usr/bin/python3.4 kvs_wrapper.py >/dev/null &")
+		os.system("/usr/bin/python3.4 kvs_wrapper.py >/dev/null 2>/dev/null &")
 	elif option == "stop":
 		pstring = "kvs_wrapper.py"
 		for line in os.popen("ps ax | grep " + pstring + " | grep -v grep"):
