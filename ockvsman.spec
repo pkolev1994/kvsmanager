@@ -1,7 +1,7 @@
 Summary: Opencode KVS Manager
 Name: ockvsman
 Version: 1.0.1
-Release: 7%{?dist}%{?ocrel}
+Release: 8%{?dist}%{?ocrel}
 BuildArch: noarch
 URL: http://www.opencode.com
 License: Commercial
@@ -9,7 +9,7 @@ Group: opencode
 Source: ockvsman-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Packager: hristo.slavov@opencode.com
-Requires: python34, docker-ce, python34-libs, python34-websocket-client, python34-urllib3, ocpytools
+Requires: python34, python34-libs, python34-websocket-client, python34-urllib3, python34-markdown, python34-sqlalchemy, python34-click, python34-pycryptodomex, python34-jinja2, python34-markupsafe, ocpytools, python34-itsdangerous, python34-flask_restful, python34-werkzeug, python34-flask
 
 %description
 Opencode KVS manager

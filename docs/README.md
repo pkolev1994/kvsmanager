@@ -4,20 +4,20 @@
 
 Listens on port 9002
 
-For commands :::
+#For commands :::
 
 	GET http://0.0.0.0:9002/commands 
 	Returns json format of all received commands
 
-	GET http://0.0.0.0:9002/commands/target 
+	GET http://0.0.0.0:9002/commands/<target> 
 	Returns json format of all received commands for the specific target
 
 	POST http://0.0.0.0:9002/commands 
 	Accept json format for the post request:: { "target": "10.102.7.125", "command_name": "mkdir", "parameters": "/aux0/platform/ocorchestrator/" }
 
-	DELETE http://0.0.0.0:9002/commands/target
+	DELETE http://0.0.0.0:9002/commands/<target>
 
-For confs :::
+#For main application confs [browsers, gateways, connectors]:::
 
 	POST http://0.0.0.0:9002/etcd/confs
 	Accept json format for the post request :: 
@@ -31,9 +31,45 @@ For confs :::
 	   "value2":"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<\/cross_plugin> \r\n"
 	}
 
-#NOTE::
-
-	key2 and value2 are not mendatory
+####NOTE::
+	key2 and value2 are not mendatory parameters
 	They are only for connectors configs
+####NOTE::
 
-#NOTE::
+#For rest application confs :::
+
+	POST http://0.0.0.0:9002/pushconfs
+	Accept json format for the post request :: 
+{
+	"hostnames": "smsc_ocpm_1",
+	"key": "/platform/smsc_ocpm/general/confs/aaa.json",
+	"file_path": "/aux0/customer/containers/occonfman/",
+	"file_value": "{'312312312': 'fwdw'}",
+	"return_result": "True",
+	"regex": "occonfman",
+	"command": "occonfman status"
+}
+####NOTE::
+	regex and command are not mendatory parameters
+	They are only when you want set return_result to be True
+####NOTE::
+
+
+#For adding only key in etcd key value store :::
+
+	POST http://0.0.0.0:9002/addkey
+
+{
+	"key": "/platform/smsc_ocpm/general/confs/aaa.json",
+	"value": "{'gosho': '12', 'pesho': '25'}"
+}
+
+
+
+#For get value of a  key in etcd key value store :::
+
+	POST http://0.0.0.0:9002/getkey
+
+{
+	"key": "/platform/ussdc_br/general/confs/ocbrowser.xml"
+}

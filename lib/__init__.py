@@ -113,18 +113,18 @@ class Command(Resource):
 class Etcd_kvs(Resource):
 
 
-	def get(self):
+	# def get(self):
 
-		conn = db_connect.connect()
-		query = conn.execute("select * from commands where target='{}'".format(target))
-		result = {'data': [dict(zip(tuple (query.keys()) ,i)) for i in query.cursor]}
+	# 	conn = db_connect.connect()
+	# 	query = conn.execute("select * from commands where target='{}'".format(target))
+	# 	result = {'data': [dict(zip(tuple (query.keys()) ,i)) for i in query.cursor]}
 
-		#If the key does not exist in data store , will return 404
+	# 	#If the key does not exist in data store , will return 404
 
-		if not result['data']:
-			return {'message': "Target wasn't found", 'data': {}}, 404
+	# 	if not result['data']:
+	# 		return {'message': "Target wasn't found", 'data': {}}, 404
 
-		return result, 200
+	# 	return result, 200
 
 	def post(self):
 
@@ -217,6 +217,119 @@ class Etcd_kvs(Resource):
 		return host_ids
 
 
+
+class EtcdAddKey(Resource):
+
+	def post(self):
+
+		parser = reqparse.RequestParser()
+
+		parser.add_argument('key', required=True)
+		parser.add_argument('value', required=True)
+		# parser.add_argument('post_date', '{}'.format(datetime.datetime.now()))
+
+
+		# Parse the arguments into an object
+		args = parser.parse_args()
+		etcd_manager = EtcdManagement()
+		try:
+			etcd_manager.write(new_key = args['key'], value = args['value'])
+		except:
+			return {'message': "Key wasn't registered successfully"}, 401
+
+		return {'message': 'Key was registered successfully'}, 200
+
+
+class EtcdPushConfs(Resource):
+
+	def post(self):
+
+		parser = reqparse.RequestParser()
+
+		parser.add_argument('hostnames', required=True)
+		parser.add_argument('key', required=True)
+		parser.add_argument('file_value', required=True)
+		parser.add_argument('file_path', required=True)
+		parser.add_argument('return_result', required=True)
+		parser.add_argument('regex', required=False)
+		parser.add_argument('command', required=False)
+		# parser.add_argument('post_date', '{}'.format(datetime.datetime.now()))
+
+
+		# Parse the arguments into an object
+		args = parser.parse_args()
+		etcd_manager = EtcdManagement()
+
+		try:
+			key_value = literal_eval(etcd_manager.read_key(key = args['key']))
+			curr_id = int(key_value['id']) + 1
+		except:
+			curr_id = 1
+
+		conf_name = re.search(r".*\/(.*?$)", args['key'], re.I|re.S).group(1)
+		json_key = {
+					"hostnames": args['hostnames'], \
+					"file_path": args['file_path'], \
+					"file_value": args['file_value'], \
+					"return_result": args['return_result'], \
+					"regex": args['regex'],
+					"command": args['command'],
+					"id": curr_id}
+		try:
+			if re.search(r"False", args['return_result'], re.I|re.S): 
+				etcd_manager.write(new_key = args['key'], value = json_key)
+				return {'message': 'Config was registered successfully'}, 200
+			elif re.search(r"True", args['return_result'], re.I|re.S):
+				etcd_manager.write(new_key = args['key'], value = json_key)
+				status_results = {}
+				hostnames = args['hostnames'].split(',')
+				for i in range(1,5):
+					for hostname in hostnames:
+						taken_status = etcd_manager.get_config_statuses(hostname = hostname, \
+																conf_name = conf_name)
+						if taken_status:
+							returned_status = json.loads(taken_status)
+							if int(returned_status['id']) == curr_id:
+								status_results[hostname] = returned_status
+								hostnames.remove(hostname)
+					time.sleep(1)
+
+				if hostnames:
+					for hostname in hostnames:
+						status_results[hostname] = {"id": curr_id, \
+													"timestamp": '{}'.format(datetime.datetime.now()), \
+													"status": "unknown"}
+				return {'message': 'Config was registered successfully', 'data': status_results}, 200
+		except:
+			return {'message': "Something went wrong"}, 401
+
+
+
+class EtcdGetKey(Resource):
+
+	def post(self):
+
+		parser = reqparse.RequestParser()
+
+		parser.add_argument('key', required=True)
+		# parser.add_argument('post_date', '{}'.format(datetime.datetime.now()))
+
+
+		# Parse the arguments into an object
+		args = parser.parse_args()
+		etcd_manager = EtcdManagement()
+		key_data = None
+		try:
+			key_data = etcd_manager.read_key(args['key'])
+		except:
+			return {'message': "Key can't be get!!"}, 401
+
+		return {'message': 'Key was get successfully', 'data' : key_data}, 200
+
+
 api.add_resource(CommandsList, '/commands')
 api.add_resource(Command, '/commands/<string:target>')
 api.add_resource(Etcd_kvs, '/etcd/confs')
+api.add_resource(EtcdAddKey, '/addkey')
+api.add_resource(EtcdPushConfs, '/pushconfs')
+api.add_resource(EtcdGetKey, '/getkey')
